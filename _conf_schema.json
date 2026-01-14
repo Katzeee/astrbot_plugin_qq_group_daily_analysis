@@ -69,8 +69,14 @@
     "report_template": {
         "type": "string",
         "description": "报告模板",
-        "default": "scrapbook",
+        "default": "mini_scrapbook",
         "hint": "分析报告使用的HTML模板名称，使用 `/设置模板` 查看使用指南，使用`/查看模板` 命令查看模板样式效果"
+    },
+    "send_text_topics_after_image": {
+        "type": "bool",
+        "description": "发送文字报告",
+        "default": false,
+        "hint": "在发送图片形式的总结报告之后，是否发送文字形式的话题总结部分。每5条话题发送一次，包含当日日期"
     },
 
     "min_messages_threshold": {
