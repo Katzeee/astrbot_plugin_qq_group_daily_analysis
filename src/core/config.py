@@ -327,7 +327,7 @@ class ConfigManager:
 
     def get_report_template(self) -> str:
         """获取报告模板名称"""
-        return self.config.get("report_template", "scrapbook")
+        return self.config.get("report_template", "mini_scrapbook")
 
     def set_report_template(self, template_name: str):
         """设置报告模板名称"""
