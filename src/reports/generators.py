@@ -234,7 +234,10 @@ class ReportGenerator:
         topics_html = self.html_templates.render_template(
             "topic_item.html", topics=topics_list
         )
-        logger.info(f"话题HTML生成完成，长度: {len(topics_html)}")
+        if topics_html is not None:
+            logger.info(f"话题HTML生成完成，长度: {len(topics_html)}")
+        else:
+            logger.info("话题模板不存在，跳过话题部分渲染")
 
         # 使用Jinja2模板构建用户称号HTML（批量渲染，包含头像）
         max_user_titles = self.config_manager.get_max_user_titles()
@@ -254,7 +257,10 @@ class ReportGenerator:
         titles_html = self.html_templates.render_template(
             "user_title_item.html", titles=titles_list
         )
-        logger.info(f"用户称号HTML生成完成，长度: {len(titles_html)}")
+        if titles_html is not None:
+            logger.info(f"用户称号HTML生成完成，长度: {len(titles_html)}")
+        else:
+            logger.info("用户称号模板不存在，跳过用户称号部分渲染")
 
         # 使用Jinja2模板构建金句HTML（批量渲染）
         max_golden_quotes = self.config_manager.get_max_golden_quotes()
@@ -275,7 +281,10 @@ class ReportGenerator:
         quotes_html = self.html_templates.render_template(
             "quote_item.html", quotes=quotes_list
         )
-        logger.info(f"金句HTML生成完成，长度: {len(quotes_html)}")
+        if quotes_html is not None:
+            logger.info(f"金句HTML生成完成，长度: {len(quotes_html)}")
+        else:
+            logger.info("金句模板不存在，跳过金句部分渲染")
 
         # 生成活跃度可视化HTML
         chart_data = self.activity_visualizer.get_hourly_chart_data(
@@ -284,7 +293,10 @@ class ReportGenerator:
         hourly_chart_html = self.html_templates.render_template(
             chart_template, chart_data=chart_data
         )
-        logger.info(f"活跃度图表HTML生成完成，长度: {len(hourly_chart_html)}")
+        if hourly_chart_html is not None:
+            logger.info(f"活跃度图表HTML生成完成，长度: {len(hourly_chart_html)}")
+        else:
+            logger.info("活跃度图表模板不存在，跳过活跃度图表部分渲染")
 
         # 准备最终渲染数据
         render_data = {
@@ -295,10 +307,6 @@ class ReportGenerator:
             "total_characters": stats.total_characters,
             "emoji_count": stats.emoji_count,
             "most_active_period": stats.most_active_period,
-            "topics_html": topics_html,
-            "titles_html": titles_html,
-            "quotes_html": quotes_html,
-            "hourly_chart_html": hourly_chart_html,
             "total_tokens": stats.token_usage.total_tokens
             if stats.token_usage.total_tokens
             else 0,
@@ -309,6 +317,16 @@ class ReportGenerator:
             if stats.token_usage.completion_tokens
             else 0,
         }
+        
+        # 只添加成功渲染的模板部分
+        if topics_html is not None:
+            render_data["topics_html"] = topics_html
+        if titles_html is not None:
+            render_data["titles_html"] = titles_html
+        if quotes_html is not None:
+            render_data["quotes_html"] = quotes_html
+        if hourly_chart_html is not None:
+            render_data["hourly_chart_html"] = hourly_chart_html
 
         logger.info(f"渲染数据准备完成，包含 {len(render_data)} 个字段")
         return render_data
@@ -325,14 +343,30 @@ class ReportGenerator:
         for key, value in data.items():
             # 统一使用双大括号格式 {{key}}
             placeholder = "{{" + key + "}}"
-            result = result.replace(placeholder, str(value))
+            # 如果值为 None，替换为空字符串（表示该部分不渲染）
+            if value is None:
+                result = result.replace(placeholder, "")
+            else:
+                result = result.replace(placeholder, str(value))
 
-        # 检查是否还有未替换的占位符
+        # 检查是否还有未替换的占位符（排除可选部分）
         import re
 
-        if remaining_placeholders := re.findall(r"\{\{[^}]+\}\}", result):
+        remaining_placeholders = re.findall(r"\{\{[^}]+\}\}", result)
+        # 过滤掉已知的可选占位符（这些可能因为模板不存在而不被替换）
+        optional_placeholders = ["topics_html", "titles_html", "quotes_html", "hourly_chart_html"]
+        important_placeholders = [
+            p for p in remaining_placeholders 
+            if p.strip("{}") not in optional_placeholders
+        ]
+        
+        if important_placeholders:
             logger.warning(
-                f"未替换的占位符 ({len(remaining_placeholders)}个): {remaining_placeholders[:10]}"
+                f"未替换的重要占位符 ({len(important_placeholders)}个): {important_placeholders[:10]}"
+            )
+        elif remaining_placeholders:
+            logger.debug(
+                f"未替换的可选占位符（模板可能不存在）: {remaining_placeholders}"
             )
 
         return result

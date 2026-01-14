@@ -144,21 +144,31 @@ class GoldenQuoteAnalyzer(BaseAnalyzer):
                 nickname = InfoUtils.get_user_nickname(self.config_manager, sender)
                 msg_time = datetime.fromtimestamp(msg.get("time", 0)).strftime("%H:%M")
 
+                text_parts = []
                 for content in msg.get("message", []):
                     if content.get("type") == "text":
                         text = content.get("data", {}).get("text", "").strip()
-                        # 过滤长度适中、可能圣经的消息
-                        if 5 <= len(text) <= 100 and not text.startswith(
-                            ("http", "www", "/")
-                        ):
-                            interesting_messages.append(
-                                {
-                                    "sender": nickname,
-                                    "time": msg_time,
-                                    "content": text,
-                                    "qq": sender.get("user_id", 0),
-                                }
-                            )
+                        if text:
+                            text_parts.append(text)
+                    elif content.get("type") == "image":
+                        # 处理图片消息，转换为文本标记
+                        text_parts.append("[图片]")
+                
+                # 合并所有文本部分
+                combined_text = "".join(text_parts).strip()
+                
+                # 过滤长度适中、可能圣经的消息
+                if combined_text and 5 <= len(combined_text) <= 100 and not combined_text.startswith(
+                    ("http", "www", "/")
+                ):
+                    interesting_messages.append(
+                        {
+                            "sender": nickname,
+                            "time": msg_time,
+                            "content": combined_text,
+                            "qq": sender.get("user_id", 0),
+                        }
+                    )
 
             return interesting_messages
 
