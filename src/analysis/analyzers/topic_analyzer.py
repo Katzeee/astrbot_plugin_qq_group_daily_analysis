@@ -110,6 +110,9 @@ class TopicAnalyzer(BaseAnalyzer):
                         if reply_id:
                             reply_text = f"[回复:{reply_id}]"
                             text_parts.append(reply_text)
+                    elif content_type == "image":
+                        # 处理图片消息，转换为文本标记
+                        text_parts.append("[图片]")
 
                 # 合并所有文本部分
                 combined_text = "".join(text_parts).strip()

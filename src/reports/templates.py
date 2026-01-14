@@ -7,7 +7,7 @@ import asyncio
 import os
 import threading
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape, TemplateNotFound
 
 from astrbot.api import logger
 
@@ -114,7 +114,7 @@ class HTMLTemplates:
             logger.error(f"加载PDF模板失败: {e}")
             return ""
 
-    def render_template(self, template_name: str, **kwargs) -> str:
+    def render_template(self, template_name: str, **kwargs) -> str | None:
         """渲染指定的模板文件
 
         Args:
@@ -122,12 +122,15 @@ class HTMLTemplates:
             **kwargs: 传递给模板的变量
 
         Returns:
-            渲染后的HTML字符串
+            渲染后的HTML字符串，如果模板不存在则返回 None
         """
         try:
             env = self._get_env()
             template = env.get_template(template_name)
             return template.render(**kwargs)
+        except TemplateNotFound:
+            logger.info(f"模板文件不存在，跳过渲染: {template_name}")
+            return None
         except Exception as e:
             logger.error(f"渲染模板 {template_name} 失败: {e}")
             return ""

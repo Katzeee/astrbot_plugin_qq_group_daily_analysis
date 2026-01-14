@@ -141,7 +141,7 @@ class ConfigManager:
     def get_pdf_output_dir(self) -> str:
         """获取PDF输出目录"""
         try:
-            plugin_name = "astrbot_plugin_qq_group_daily_analysis"
+            plugin_name = "astrbot_plugin_qq_group_daily_analysis_xac"
             data_path = get_astrbot_data_path()
             default_path = data_path / "plugin_data" / plugin_name / "reports"
             return self.config.get("pdf_output_dir", str(default_path))
@@ -149,7 +149,7 @@ class ConfigManager:
             # Fallback for older versions or import errors
             return self.config.get(
                 "pdf_output_dir",
-                "data/plugins/astrbot_plugin_qq_group_daily_analysis/reports",
+                "data/plugins/astrbot_plugin_qq_group_daily_analysis_xac/reports",
             )
 
     def get_bot_qq_ids(self) -> list:
