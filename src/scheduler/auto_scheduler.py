@@ -12,6 +12,8 @@ import aiohttp
 
 from astrbot.api import logger
 
+from src.scheduler.generators_patch import generate_topics_text_summary
+
 
 class AutoScheduler:
     """自动调度器"""
@@ -534,6 +536,20 @@ class AutoScheduler:
                             )
                             if success:
                                 logger.info(f"群 {group_id} 图片报告发送成功")
+                                
+                                # 检查是否需要在图片后发送文字话题总结
+                                if self.config_manager.get_send_text_topics_after_image():
+                                    topics = analysis_result.get("topics", [])
+                                    if topics:
+                                        current_date = datetime.now().strftime("%Y年%m月%d日")
+                                        topic_summaries = generate_topics_text_summary(
+                                            topics, current_date
+                                        )
+                                        for summary_text in topic_summaries:
+                                            await self._send_text_message(group_id, summary_text)
+                                            # 避免消息发送过快，每条之间稍作延迟
+                                            await asyncio.sleep(0.5)
+                                        logger.info(f"群 {group_id} 文字话题总结发送完成，共 {len(topic_summaries)} 条")
                             else:
                                 # 图片发送失败，回退到文本
                                 logger.warning(

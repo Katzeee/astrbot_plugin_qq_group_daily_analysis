@@ -6,6 +6,7 @@ QQ群日常分析插件
 """
 
 import asyncio
+from datetime import datetime
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import filter
@@ -25,6 +26,8 @@ from .src.scheduler.auto_scheduler import AutoScheduler
 from .src.scheduler.retry import RetryManager
 from .src.utils.helpers import MessageAnalyzer
 from .src.utils.pdf_utils import PDFInstaller
+
+from .src.scheduler.generators_patch import generate_topics_text_summary
 
 
 class QQGroupDailyAnalysis(Star):
@@ -251,6 +254,19 @@ class QQGroupDailyAnalysis(Star):
                             yield event.plain_result(
                                 f"❌ 图片发送失败: {send_err}，且无法进行重试（无HTML内容）。"
                             )
+                    finally:
+                        # 检查是否需要在图片后发送文字话题总结
+                        if self.config_manager.get_send_text_topics_after_image():
+                            topics = analysis_result.get("topics", [])
+                            if topics:
+                                current_date = datetime.now().strftime("%Y年%m月%d日")
+                                topic_summaries = generate_topics_text_summary(
+                                    topics, current_date
+                                )
+                                for summary_text in topic_summaries:
+                                    yield event.plain_result(summary_text)
+                                    # 避免消息发送过快，每条之间稍作延迟
+                                    await asyncio.sleep(0.5)
 
                 elif html_content:
                     # 生成失败但有HTML，加入重试队列

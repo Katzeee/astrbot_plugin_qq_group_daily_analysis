@@ -70,6 +70,10 @@ class ConfigManager:
         """获取输出格式"""
         return self.config.get("output_format", "image")
 
+    def get_send_text_topics_after_image(self) -> bool:
+        """获取是否在图片报告后发送文字话题总结"""
+        return self.config.get("send_text_topics_after_image", False)
+
     def get_min_messages_threshold(self) -> int:
         """获取最小消息阈值"""
         return self.config.get("min_messages_threshold", 50)
