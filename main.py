@@ -6,6 +6,7 @@ QQ群日常分析插件
 """
 
 import asyncio
+from datetime import datetime
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import filter
@@ -190,6 +191,19 @@ class QQGroupDailyAnalysis(Star):
                 )
                 if image_url:
                     yield event.image_result(image_url)
+                    
+                    # 检查是否需要在图片后发送文字话题总结
+                    if self.config_manager.get_send_text_topics_after_image():
+                        topics = analysis_result.get("topics", [])
+                        if topics:
+                            current_date = datetime.now().strftime("%Y年%m月%d日")
+                            topic_summaries = self.report_generator.generate_topics_text_summary(
+                                topics, current_date
+                            )
+                            for summary_text in topic_summaries:
+                                yield event.plain_result(summary_text)
+                                # 避免消息发送过快，每条之间稍作延迟
+                                await asyncio.sleep(0.5)
                 else:
                     # 如果图片生成失败，回退到文本报告
                     logger.warning("图片报告生成失败，回退到文本报告")
