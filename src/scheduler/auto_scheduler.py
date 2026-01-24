@@ -12,7 +12,7 @@ import aiohttp
 
 from astrbot.api import logger
 
-from src.scheduler.generators_patch import generate_topics_text_summary
+from .generators_patch import generate_topics_text_summary
 
 
 class AutoScheduler:
